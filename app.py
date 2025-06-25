@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from mtcnn import MTCNN
 from tensorflow.keras.models import load_model
+import tempfile
 
 # Load your trained model
 @st.cache_resource
@@ -23,14 +24,17 @@ def extract_face(frame):
         return cv2.resize(face, OUTPUT_FRAME_SIZE)
     return cv2.resize(frame, OUTPUT_FRAME_SIZE)
 
-def extract_frames_from_video(video_file):
-    # video_file: BytesIO returned by st.file_uploader
-    file_bytes = np.asarray(bytearray(video_file.read()), dtype=np.uint8)
-    cap = cv2.VideoCapture()
-    cap.open(cv2.imdecode(file_bytes, cv2.IMREAD_COLOR))
+def extract_frames_from_video(uploaded_file):
+    # Save uploaded file temporarily
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp:
+        tmp.write(uploaded_file.read())
+        tmp_path = tmp.name
+
+    cap = cv2.VideoCapture(tmp_path)
     if not cap.isOpened():
         st.error("Could not open video file.")
         return np.zeros((FRAME_COUNT, *OUTPUT_FRAME_SIZE, 3), dtype=np.uint8)
+
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     step = max(total_frames // FRAME_COUNT, 1)
     frames = []
@@ -43,26 +47,33 @@ def extract_frames_from_video(video_file):
         face = extract_face(frame)
         frames.append(face)
     cap.release()
-    # If not enough frames, pad with zeros
+
+    # Pad with black frames if needed
     while len(frames) < FRAME_COUNT:
         frames.append(np.zeros((*OUTPUT_FRAME_SIZE, 3), dtype=np.uint8))
+
     return np.array(frames) / 255.0
 
-st.title("Deepfake Video Detector")
-st.write("Upload a short video file (e.g. mp4).")
+# Streamlit UI
+st.title("🎭 Deepshield: A Deepfake Video Detector System")
+st.write("Upload a short video file (mp4, avi, mov) to detect deepfakes.")
 
 uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov"])
 
 if uploaded_file is not None:
     st.video(uploaded_file)
-    with st.spinner('Extracting faces and predicting...'):
+
+    with st.spinner('⏳ Extracting faces and predicting...'):
         frames = extract_frames_from_video(uploaded_file)
         frames = np.expand_dims(frames, axis=0)  # (1, FRAME_COUNT, H, W, 3)
+
         pred = model.predict(frames)
         fake_prob = float(pred[0, 1])
         real_prob = float(pred[0, 0])
-        label = "Fake" if fake_prob > real_prob else "Real"
+
+        label = "🟥 Fake" if fake_prob > real_prob else "🟩 Real"
         confidence = max(fake_prob, real_prob)
+
     st.markdown(f"### Prediction: **{label}**")
-    st.markdown(f"**Confidence:** {confidence*100:.2f}%")
+    st.markdown(f"**Confidence:** `{confidence * 100:.2f}%`")
     st.progress(confidence)
