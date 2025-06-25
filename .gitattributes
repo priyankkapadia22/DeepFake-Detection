@@ -1,0 +1,2 @@
+D:/DEEPFAKE/DeepFake-Detection/model/deepfake_detection_model_final.keras filter=lfs diff=lfs merge=lfs -text
+model/deepfake_detection_model_final.keras filter=lfs diff=lfs merge=lfs -text
