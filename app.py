@@ -49,7 +49,7 @@ def extract_frames_from_video(video_file):
     return np.array(frames) / 255.0
 
 st.title("Deepfake Video Detector")
-st.write("Upload a short video file (e.g. mp4) to check if it's real or fake.")
+st.write("Upload a short video file (e.g. mp4).")
 
 uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov"])
 
