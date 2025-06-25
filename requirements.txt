@@ -1,4 +1,4 @@
-tensorflow==2.19.0
+tensorflow>=2.8.0,<2.20
 numpy
 opencv-python
 scikit-learn
