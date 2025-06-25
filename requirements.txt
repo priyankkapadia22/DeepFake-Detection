@@ -1,8 +1,5 @@
-# First, upgrade pip:
-# pip install --upgrade pip
-
 streamlit
-tensorflow==2.15.0
-opencv-python
+tensorflow
+opencv-python-headless
 numpy
 mtcnn
